@@ -4,6 +4,8 @@ import random
 from xlwt import Workbook, easyxf
 from xlrd import open_workbook
 import xlrd
+import xlwt
+
 
 # Define status code for job control
 # distribute in average: -1
@@ -59,7 +61,7 @@ def get_class_piority(job_controls):
         total = 0
         for job in jobs.values():
             total += job
-        job_piority_temps[key] = total / 3
+        job_piority_temps[key] = total / len(jobs)
 
     job_piority_temps = sorted(
         job_piority_temps.items(), key=lambda d: d[1], reverse=True)
@@ -126,18 +128,75 @@ def get_a_week_of_distribute():
     return week_of_distribute_temp
 
 
-def prettytable_output():
+def prettytable_output(distribution_sets):
     tb = pt.PrettyTable()
-    tb.field_names = ["WEEK"] + [str(x+1)+" class" for x in range(CLASS_COUNT)]
-    for i in range(TOTAL_WEEKS):
-        ready_to_add = get_a_week_of_distribute()
-        if ready_to_add:
-            tb.add_row(["week "+str(i+1)] + ready_to_add)
+    tb.field_names = distribution_sets[0]
+    for distribution_set in distribution_sets[1:]:
+        tb.add_row(distribution_set)
     print(tb)
 
 # print(datas)
 
 
+"""
+Get distribution sets
+
+"""
+
+
+def get_distribution_sets():
+    distribution_sets = []
+    field_names = ["周 次"] + [str(x+1)+" 班" for x in range(CLASS_COUNT)]
+    distribution_sets.append(field_names)
+
+    for i in range(TOTAL_WEEKS):
+        ready_to_add = get_a_week_of_distribute()
+        if ready_to_add:
+            distribution_sets.append(["第"+str(i+1)+"周"] + ready_to_add)
+    return distribution_sets
+
+
 # print(get_a_week_of_distribute())
 # print(get_class_piority(job_controls))
-prettytable_output()
+# prettytable_output()
+"""
+Write the distribution sets to a work book
+"""
+
+
+def write_distribution_to_workbook(distribution_sets):
+    # Setting up for the workbook and worksheet
+    workbook = Workbook(encoding='utf-8')
+    distribution_worksheet = workbook.add_sheet('distribution_sets')
+    # Setting up for the title
+    style = xlwt.XFStyle()
+    font = xlwt.Font()
+    font.bold = True
+    alignment = xlwt.Alignment()
+    alignment.horz = xlwt.Alignment.HORZ_CENTER
+    alignment.vert = xlwt.Alignment.VERT_CENTER
+    style.font = font
+    style.alignment = alignment
+    distribution_worksheet.write_merge(
+        0, 0, 0, CLASS_COUNT, "Distribution Sets", style)
+
+    # Setting up for the fields row
+
+    for distribution_set in distribution_sets:
+        row_of_distribution = distribution_sets.index(distribution_set) + 1
+        is_field_row = True if row_of_distribution == 1 else False
+
+        for distribution_item in distribution_set:
+            col_of_distribution = distribution_set.index(distribution_item)
+            if is_field_row:
+                distribution_worksheet.write(
+                    row_of_distribution, col_of_distribution, distribution_item, style)
+            else:
+                distribution_worksheet.write(
+                    row_of_distribution, col_of_distribution, distribution_item)
+    workbook.save('distribution.xls')
+
+
+distribution_sets = get_distribution_sets()
+prettytable_output(distribution_sets)
+write_distribution_to_workbook(distribution_sets)

@@ -1,4 +1,6 @@
 venv
+xvenv
+.vscode
 *.xlsx
 *.xls
 !09test.xlsx

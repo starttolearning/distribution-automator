@@ -3,4 +3,5 @@ xvenv
 .vscode
 *.xlsx
 *.xls
-!09test.xlsx
+*.docx
+*vscode
